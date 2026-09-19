@@ -3,6 +3,7 @@
 const DATA_URL = './data/centros.json';
 const AMAZON_BOUNDARY_URL = './data/amazonia_boundary.geojson';
 const DEPARTMENT_BOUNDARY_URL = './data/departamentos_boundary.geojson';
+const QUERY_ALIASES = new Map([
   ['PASTO','SAN JUAN DE PASTO'],
   ['QUIBDO','SAN FRANCISCO DE QUIBDÓ']
 ]);

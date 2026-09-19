@@ -175,3 +175,104 @@ body.landing #mapShade{background:radial-gradient(circle at 52% 42%,rgba(5,9,7,.
   .found-tabs{gap:5px}
   .found-tab{font-size:9px;padding:6px 8px}
 }
+
+
+/* v4.4 — experiencia móvil: el mapa manda mientras se escribe */
+:root{
+  --keyboard-inset:0px;
+}
+
+@media(max-width:760px){
+  /* En móvil los hallazgos funcionan mejor como panel bajo demanda. */
+  .rank-panel{
+    max-height:min(42vh,360px);
+    overscroll-behavior:contain;
+  }
+
+  /* Controles algo más discretos para dejar respirar el mapa. */
+  .floating-action,.finish-button{bottom:80px}
+  .legend{bottom:126px}
+  .search-dock{
+    transition:bottom .16s ease,background .16s ease,border-color .16s ease;
+    will-change:bottom;
+  }
+
+  /* Estado de escritura: mapa + buscador. El resto se retira temporalmente. */
+  body.keyboard-open .topbar,
+  body.keyboard-open #rankPanel,
+  body.keyboard-open #openRank,
+  body.keyboard-open .legend,
+  body.keyboard-open .finish-button{
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  body.keyboard-open .search-dock{
+    left:8px;
+    right:8px;
+    bottom:calc(var(--keyboard-inset) + 8px);
+    height:52px;
+    background:rgba(12,19,15,.92);
+    border-color:rgba(215,242,223,.22);
+    box-shadow:0 10px 34px rgba(0,0,0,.32);
+  }
+
+  /* Mientras se escribe no hace falta gastar ancho en el selector territorial. */
+  body.keyboard-open #scopeSelect,
+  body.keyboard-open .dock-divider{
+    display:none;
+  }
+
+  body.keyboard-open #guessInput{
+    font-size:16px; /* evita zoom automático en iOS */
+    padding-left:12px;
+  }
+
+  body.keyboard-open .toast{
+    bottom:calc(var(--keyboard-inset) + 68px);
+    max-width:calc(100vw - 16px);
+  }
+
+  body.keyboard-open #mapShade{
+    background:linear-gradient(180deg,rgba(4,8,6,.08),rgba(4,8,6,.02) 55%,rgba(4,8,6,.08));
+  }
+  body.keyboard-open .leaflet-control-attribution{display:none}
+
+  /* Al abrir Hallazgos se comporta como una hoja: no compite con otros controles. */
+  #rankPanel:not(.hidden) ~ .legend,
+  #rankPanel:not(.hidden) ~ .finish-button{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  /* Los paneles modales usan mejor la altura realmente disponible en teléfonos. */
+  .modal{padding:10px}
+  .modal-card{max-height:calc(100dvh - 20px);border-radius:18px}
+}
+
+@media(max-width:420px){
+  .topbar{left:8px;right:8px;top:8px}
+  .brand-button{min-width:auto;padding:8px 9px;font-size:12px}
+  .score-strip{gap:4px;padding:6px 7px}
+  .score-block,.score-block:nth-of-type(2){min-width:52px}
+  .score-value{font-size:15px}
+  .score-block:nth-of-type(2) .score-value{font-size:12px}
+  .score-label{font-size:8px;max-width:58px}
+  .search-dock{left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom))}
+  #scopeSelect{max-width:104px}
+  .rank-panel{left:8px;right:8px;bottom:70px;padding:13px 14px 14px}
+  .floating-action{left:8px;bottom:70px}
+  .finish-button{right:8px;bottom:70px}
+  .legend{right:8px;bottom:116px;width:132px}
+}
+
+@media(max-width:760px) and (max-height:700px){
+  .landing-card{padding:21px 18px 18px}
+  .landing-card h1{font-size:30px;margin:10px 0 12px}
+  .intro{font-size:14px;margin-bottom:16px}
+  .mode-card{min-height:88px;padding:15px}
+  .mode-card strong{font-size:19px;margin-top:14px}
+  .landing-note{margin-top:12px}
+}

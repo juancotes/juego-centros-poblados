@@ -47,6 +47,63 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 }).addTo(map);
 document.body.classList.add('landing');
 
+
+const mobileUI = window.matchMedia('(max-width: 760px)');
+let mobileViewportBaseline = Math.max(window.innerHeight, window.visualViewport?.height || 0);
+
+function isMobileUI(){ return mobileUI.matches; }
+
+function collapseMobileRank(){
+  if(!isMobileUI()) return;
+  els.rankPanel.classList.add('hidden');
+  els.openRank.classList.remove('hidden');
+}
+
+function syncMobileViewport(){
+  const vv=window.visualViewport;
+  const currentHeight=vv?.height || window.innerHeight;
+  const offsetTop=vv?.offsetTop || 0;
+
+  // Actualiza la referencia solo cuando no se está escribiendo. Así distinguimos
+  // el teclado de cambios pequeños de las barras del navegador.
+  if(document.activeElement!==els.guessInput){
+    mobileViewportBaseline=Math.max(mobileViewportBaseline,window.innerHeight,currentHeight);
+  }
+
+  const keyboardByHeight=mobileViewportBaseline-currentHeight>120;
+  const keyboardByInset=vv ? (window.innerHeight-currentHeight-offsetTop)>120 : false;
+  const keyboardOpen=isMobileUI() && document.activeElement===els.guessInput && (keyboardByHeight || keyboardByInset);
+  const inset=Math.max(0,window.innerHeight-currentHeight-offsetTop);
+
+  document.documentElement.style.setProperty('--keyboard-inset',`${keyboardOpen?inset:0}px`);
+  document.body.classList.toggle('keyboard-open',keyboardOpen);
+}
+
+function blurMobileKeyboard(){
+  if(isMobileUI() && document.activeElement===els.guessInput) els.guessInput.blur();
+}
+
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',syncMobileViewport);
+  window.visualViewport.addEventListener('scroll',syncMobileViewport);
+}
+window.addEventListener('resize',()=>{
+  if(!isMobileUI()) document.body.classList.remove('keyboard-open');
+  syncMobileViewport();
+});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{
+  mobileViewportBaseline=Math.max(window.innerHeight,window.visualViewport?.height || 0);
+  syncMobileViewport();
+},300));
+if(mobileUI.addEventListener) mobileUI.addEventListener('change',()=>{
+  mobileViewportBaseline=Math.max(window.innerHeight,window.visualViewport?.height || 0);
+  document.body.classList.remove('keyboard-open');
+  syncMobileViewport();
+});
+els.guessInput.addEventListener('focus',()=>setTimeout(syncMobileViewport,60));
+els.guessInput.addEventListener('blur',()=>setTimeout(syncMobileViewport,100));
+map.on('click',blurMobileKeyboard);
+
 function normalizeText(value) {
   return String(value ?? '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -181,8 +238,9 @@ function startGame(mode){
   els.modeTitle.textContent=mode==='amazon'?'Amazonía colombiana':'Colombia';
   els.resumeBtn.classList.add('hidden');
   setLanding(false); buildScopeOptions(); refreshAll();
+  collapseMobileRank();
   if(mode==='amazon') fitCurrentScope(); else map.fitBounds([[-4.4,-79.1],[13.5,-66.7]],{padding:[25,25]});
-  setTimeout(()=>els.guessInput.focus(),80);
+  setTimeout(()=>{ els.guessInput.focus(); syncMobileViewport(); },80);
 }
 
 function refreshAll(){
@@ -269,6 +327,7 @@ function submitGuess(){
   openHomonymPicker(raw,remaining);
 }
 function openHomonymPicker(raw,places){
+  blurMobileKeyboard();
   els.homonymTitle.textContent=`¿Cuál “${raw}” querías decir?`;
   els.homonymChoices.innerHTML='';
   places.sort((a,b)=>a.dn.localeCompare(b.dn,'es')||a.mn.localeCompare(b.mn,'es')).forEach(p=>{
@@ -384,12 +443,14 @@ function renderFoundPlaces(){
     </div>`).join(''):'<p class="found-empty">Todavía no has nombrado ningún lugar.</p>';
 }
 function openFoundPlaces(sort='populationDesc'){
+  blurMobileKeyboard();
   state.foundSort=sort;
   renderFoundPlaces();
   els.foundPlacesModal.classList.remove('hidden');
 }
 
 function openSummary(){
+  blurMobileKeyboard();
   const {guessed,totalPop,guessedPop}=populationStats();
   els.summaryTitle.textContent=state.mode==='amazon'?'Tu mapa de la Amazonía':'Tu mapa de Colombia';
   els.summaryPlaces.textContent=fmtInt(guessed.length);
@@ -453,21 +514,23 @@ els.submitGuess.addEventListener('click',submitGuess);
 els.guessInput.addEventListener('keydown',e=>{ if(e.key==='Enter') submitGuess(); if(e.key==='Escape') els.guessInput.value=''; });
 els.scopeSelect.addEventListener('change',()=>{ state.scope=els.scopeSelect.value; clearRevealed(); refreshAll(); fitCurrentScope(); els.guessInput.focus(); });
 els.collapseRank.addEventListener('click',()=>{ els.rankPanel.classList.add('hidden'); els.openRank.classList.remove('hidden'); });
-els.openRank.addEventListener('click',()=>{ els.openRank.classList.add('hidden'); els.rankPanel.classList.remove('hidden'); });
+els.openRank.addEventListener('click',()=>{ blurMobileKeyboard(); els.openRank.classList.add('hidden'); els.rankPanel.classList.remove('hidden'); });
 els.foundPlacesBtn.addEventListener('click',()=>openFoundPlaces('isolation'));
 document.querySelectorAll('[data-found-sort]').forEach(b=>b.addEventListener('click',()=>openFoundPlaces(b.dataset.foundSort)));
 els.finishBtn.addEventListener('click',openSummary);
 els.continueBtn.addEventListener('click',()=>closeModal('summaryModal'));
 els.revealBtn.addEventListener('click',revealAnswers);
 els.homeBtn.addEventListener('click',()=>{
+  blurMobileKeyboard();
   closeModal('summaryModal'); closeModal('homonymModal'); closeModal('foundPlacesModal'); clearRevealed();
+  document.body.classList.remove('keyboard-open');
   els.resumeBtn.classList.toggle('hidden',!state.mode);
   setLanding(true); map.fitBounds([[-4.4,-79.1],[13.5,-66.7]],{padding:[20,20]}); updateBoundaryStyles();
 });
 els.resumeBtn.addEventListener('click',()=>{
   if(!state.mode) return;
-  setLanding(false); refreshAll(); fitCurrentScope();
-  setTimeout(()=>els.guessInput.focus(),50);
+  setLanding(false); refreshAll(); fitCurrentScope(); collapseMobileRank();
+  setTimeout(()=>{ els.guessInput.focus(); syncMobileViewport(); },50);
 });
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>startGame(b.dataset.mode)));
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));

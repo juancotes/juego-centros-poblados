@@ -1,9 +1,8 @@
 'use strict';
 
 const DATA_URL = './data/centros.json';
-const AMAZON_BOUNDARY_URL = 'https://gis.siatac.co/arcgis/rest/services/UER_Limites/Cartografia_Base/FeatureServer/1/query?where=1%3D1&outFields=objectid_1&returnGeometry=true&outSR=4326&f=geojson';
-const DEPARTMENT_BOUNDARY_URL = 'https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Serv_DIVIPOLA_MGN_2025/FeatureServer/319/query?where=1%3D1&outFields=DPTO_CCDGO,DPTO_CNMBRE&returnGeometry=true&outSR=4326&f=geojson';
-const QUERY_ALIASES = new Map([
+const AMAZON_BOUNDARY_URL = './data/amazonia_boundary.geojson';
+const DEPARTMENT_BOUNDARY_URL = './data/departamentos_boundary.geojson';
   ['PASTO','SAN JUAN DE PASTO'],
   ['QUIBDO','SAN FRANCISCO DE QUIBDÓ']
 ]);
@@ -505,7 +504,9 @@ async function loadAmazonBoundary(){
     const res=await fetch(AMAZON_BOUNDARY_URL); if(!res.ok) throw new Error('SINCHI');
     const geo=await res.json(); state.amazonBoundary=geo;
     state.amazonIds=new Set(state.data.places.filter(p=>pointInFeatureCollection([p.x,p.y],geo)).map(p=>p.id));
-    state.amazonLayer=L.geoJSON(geo,{interactive:false,style:{fillOpacity:0}}).addTo(map);
+
+    state.amazonLayer=L.geoJSON(geo,{interactive:false,style:{color:'transparent',weight:0,fillOpacity:0}}).addTo(map);
+    updateBoundaryStyles();
     if(state.mode==='amazon'){ buildScopeOptions(); refreshAll(); fitCurrentScope(); }
   }catch(e){ console.info('Se usa la clasificación amazónica de respaldo por entidades SIAT-AC.'); }
 }

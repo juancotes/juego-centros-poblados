@@ -276,3 +276,65 @@ body.landing #mapShade{background:radial-gradient(circle at 52% 42%,rgba(5,9,7,.
   .mode-card strong{font-size:19px;margin-top:14px}
   .landing-note{margin-top:12px}
 }
+
+/* Menú Lab geoespacial — único cambio */
+.site-nav{
+  position:fixed;
+  z-index:25;
+  top:max(31px,calc(env(safe-area-inset-top) + 15px));
+  left:110px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  pointer-events:none;
+}
+.site-nav a{
+  color:rgba(244,247,244,.72);
+  font-size:11px;
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.02em;
+  text-decoration:none;
+  white-space:nowrap;
+  pointer-events:auto;
+  text-shadow:0 1px 5px rgba(0,0,0,.7);
+  transition:color .16s ease,opacity .16s ease;
+}
+.site-nav a:hover,.site-nav a:focus-visible{
+  color:#f4f7f4;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+body.landing .site-nav{
+  top:max(12px,env(safe-area-inset-top));
+  left:18px;
+}
+@media(max-width:1180px) and (min-width:761px){
+  .site-nav{
+    top:max(76px,calc(env(safe-area-inset-top) + 60px));
+    left:18px;
+  }
+}
+@media(max-width:760px){
+  .site-nav{
+    top:max(62px,calc(env(safe-area-inset-top) + 52px));
+    left:10px;
+    gap:12px;
+  }
+  body.landing .site-nav{
+    top:max(9px,env(safe-area-inset-top));
+    left:10px;
+  }
+  .site-nav a{font-size:10px;letter-spacing:0}
+  body.keyboard-open .site-nav{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+}
+@media(max-width:360px){
+  .site-nav{gap:9px;left:8px}
+  .site-nav a{font-size:9px}
+  body.landing .site-nav{left:8px}
+}
+

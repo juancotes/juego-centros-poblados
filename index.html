@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101512" />
+  <meta name="description" content="¿Cuántos centros poblados de Colombia puedes nombrar?" />
+  <title>Poblados — Colombia</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="map" aria-hidden="true"></div>
+  <div id="mapShade"></div>
+
+  <section id="landing" class="landing-shell">
+    <div class="landing-card glass">
+      <div class="eyebrow">GEOGRAFÍA · COLOMBIA</div>
+      <h1>¿CUÁNTOS CENTROS POBLADOS PUEDES NOMBRAR?</h1>
+      <p class="intro">Cada nombre es un lugar que alguien llama hogar. Escribe todos los centros poblados que recuerdes y descubre cuánto de Colombia conoces.</p>
+      <div class="mode-grid">
+        <button class="mode-card" data-mode="colombia" disabled>
+          <span class="mode-label">Jugar</span>
+          <strong>Colombia</strong>
+          <small>Todo el país o por departamento</small>
+        </button>
+        <button class="mode-card" data-mode="amazon" disabled>
+          <span class="mode-label">Jugar</span>
+          <strong>Amazonía colombiana</strong>
+          <small>Límite oficial SINCHI / SIAT-AC</small>
+        </button>
+      </div>
+      <button id="resumeBtn" class="resume-button hidden" type="button">Continuar partida</button>
+      <p class="landing-note">No hay tiempo límite. Los lugares aparecen en el mapa únicamente cuando los nombras.</p>
+    </div>
+  </section>
+
+  <div id="gameUI" class="hidden">
+    <header class="topbar">
+      <button id="homeBtn" class="brand-button glass" title="Volver al inicio">← Inicio</button>
+      <div class="score-strip glass" aria-live="polite">
+        <div class="score-block">
+          <span id="placeCount" class="score-value">0</span>
+          <span class="score-label">lugares</span>
+        </div>
+        <div class="score-separator"></div>
+        <div class="score-block tooltip-wrap">
+          <span id="populationCount" class="score-value">0</span>
+          <span class="score-label">personas alcanzadas</span>
+          <span class="tooltip">Suma de la población CNPV 2018 de los lugares nombrados con cruce censal disponible.</span>
+        </div>
+        <div class="score-separator"></div>
+        <div class="score-block tooltip-wrap">
+          <span id="populationPct" class="score-value">0,0%</span>
+          <span class="score-label">de la población</span>
+          <span class="tooltip">Porcentaje de la población CNPV 2018 con cruce censal disponible dentro del ámbito seleccionado.</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="search-dock glass">
+      <select id="scopeSelect" aria-label="Ámbito de juego"></select>
+      <div class="dock-divider"></div>
+      <input id="guessInput" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Escribe un centro poblado…" aria-label="Nombre del centro poblado" />
+      <button id="submitGuess" class="submit-button" aria-label="Ingresar respuesta">↵</button>
+    </div>
+
+    <aside id="rankPanel" class="rank-panel glass">
+      <div class="rank-header">
+        <div>
+          <span class="rank-kicker">TUS HALLAZGOS</span>
+          <strong id="modeTitle">Colombia</strong>
+        </div>
+        <button id="collapseRank" class="icon-button" title="Ocultar panel">−</button>
+      </div>
+      <section class="rank-section priority-rank">
+        <div class="rank-title-row">
+          <h2>Más aislados</h2>
+          <div class="rank-title-actions"><span>percentil nacional</span><button class="rank-inline-button" type="button" data-found-sort="isolation">ver todos</button></div>
+        </div>
+        <ol id="isolatedList" class="rank-list empty-list"><li>Empieza a nombrar lugares.</li></ol>
+      </section>
+      <section class="rank-section secondary-rank priority-rank">
+        <div class="rank-title-row">
+          <h2>Menor población</h2>
+          <div class="rank-title-actions"><span>percentil nacional</span><button class="rank-inline-button" type="button" data-found-sort="populationAsc">ver todos</button></div>
+        </div>
+        <ol id="leastPopulatedList" class="rank-list empty-list"><li>—</li></ol>
+      </section>
+      <button id="foundPlacesBtn" class="rank-more-button" type="button">
+        <span>Ver todos los encontrados</span>
+        <small>3 formas de ordenarlos</small>
+      </button>
+    </aside>
+    <button id="openRank" class="floating-action glass hidden">Hallazgos</button>
+
+    <div class="legend glass" aria-label="Leyenda de población">
+      <span class="legend-title">Población</span>
+      <div class="legend-scale" aria-hidden="true">
+        <i style="--c:#d7f2df"></i><i style="--c:#a9dfb8"></i><i style="--c:#72c58d"></i><i style="--c:#3a9d67"></i><i style="--c:#197247"></i><i style="--c:#0a4b31"></i>
+      </div>
+      <div class="legend-labels"><span>&lt;100</span><span>100 mil+</span></div>
+    </div>
+
+    <button id="finishBtn" class="finish-button glass">Finalizar</button>
+    <div id="toast" class="toast glass hidden" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="homonymModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="homonymTitle">
+    <div class="modal-card glass strong-glass">
+      <button class="modal-close" data-close="homonymModal">×</button>
+      <span class="modal-kicker">MISMO NOMBRE, DISTINTOS LUGARES</span>
+      <h2 id="homonymTitle">¿Cuál querías decir?</h2>
+      <div id="homonymChoices" class="choice-list"></div>
+    </div>
+  </div>
+
+  <div id="foundPlacesModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="foundPlacesTitle">
+    <div class="modal-card found-card glass strong-glass">
+      <button class="modal-close" data-close="foundPlacesModal">×</button>
+      <span class="modal-kicker">LUGARES ENCONTRADOS</span>
+      <h2 id="foundPlacesTitle">Tus lugares encontrados</h2>
+      <div class="found-tabs" role="tablist" aria-label="Orden de lugares encontrados">
+        <button class="found-tab active" type="button" data-found-sort="isolation">Más aislados</button>
+        <button class="found-tab" type="button" data-found-sort="populationAsc">Menor población</button>
+        <button class="found-tab" type="button" data-found-sort="populationDesc">Mayor población</button>
+      </div>
+      <div id="foundPlacesMeta" class="found-meta"></div>
+      <div id="foundPlacesList" class="found-list"></div>
+    </div>
+  </div>
+
+  <div id="summaryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+    <div class="modal-card summary-card glass strong-glass">
+      <button class="modal-close" data-close="summaryModal">×</button>
+      <span class="modal-kicker">RESULTADO</span>
+      <h2 id="summaryTitle">Tu mapa de Colombia</h2>
+      <div class="summary-numbers">
+        <div><strong id="summaryPlaces">0</strong><span>lugares nombrados</span></div>
+        <div><strong id="summaryPopulation">0</strong><span>personas alcanzadas</span></div>
+        <div><strong id="summaryPop">0,0%</strong><span>de la población</span></div>
+      </div>
+      <div class="summary-columns">
+        <section>
+          <h3>Más aislados que nombraste</h3>
+          <ol id="summaryIsolated" class="summary-list"></ol>
+        </section>
+        <section>
+          <h3>Menor población que nombraste</h3>
+          <ol id="summaryLeastPopulated" class="summary-list"></ol>
+        </section>
+      </div>
+      <div class="summary-actions">
+        <button id="continueBtn" class="ghost-button">Seguir jugando</button>
+        <button id="revealBtn" class="primary-button">Ver respuestas</button>
+      </div>
+      <p class="summary-footnote">Los registros sin cruce censal disponible cuentan como lugares, pero no se convierten en población cero ni entran al porcentaje de población.</p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
